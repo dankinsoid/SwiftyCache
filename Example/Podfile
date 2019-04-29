@@ -1,0 +1,6 @@
+use_frameworks!
+target 'SwiftyCache_Tests' do
+  pod 'SwiftyCache', :path => '../'
+  
+  
+end
