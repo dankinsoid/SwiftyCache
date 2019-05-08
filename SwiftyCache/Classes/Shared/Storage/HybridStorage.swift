@@ -22,7 +22,7 @@ public final class HybridStorage<T> {
 	private var resignObserver: NSObjectProtocol?
 	private var terminateObserver: NSObjectProtocol?
 	
-	public init(memoryStorage: MemoryStorage<T>, diskStorage: DiskStorage<T>, immediatelyOnDisk: Bool = false) {
+	init(memoryStorage: MemoryStorage<T>, diskStorage: DiskStorage<T>, immediatelyOnDisk: Bool = false) {
 		self.memoryStorage = memoryStorage
 		self.diskStorage = diskStorage
 		self.immediatelyOnDisk = immediatelyOnDisk//HybridConfig(immediatelyOnDisk: immediatelyOnDisk)

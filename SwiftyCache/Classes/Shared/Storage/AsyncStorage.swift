@@ -8,7 +8,7 @@ public class AsyncStorage<Storage: StorageAware> {
 	public let innerStorage: Storage
 	public let serialQueue: DispatchQueue
 	
-	public init(storage: Storage, serialQueue: DispatchQueue? = nil) {
+	init(storage: Storage, serialQueue: DispatchQueue? = nil) {
 		self.innerStorage = storage
 		self.serialQueue = serialQueue ?? DispatchQueue(label: UUID().uuidString)
 	}
