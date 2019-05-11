@@ -530,7 +530,7 @@ fileprivate struct Boxer {
 			let cacheKey = (value as? CacheReferenceable)?.cachePrimaryKey {
 			let storage = container.anyStorage(of: T.self)
 			try storage.setObject(value, forKey: cacheKey, referenced: (info.rootStorageName, info.rootKey))
-			info.referenceKeys.dict[container.nameForStorage(of: T.self), default: []].insert(cacheKey)
+			info.referenceKeys.dict[container.nameForStorage(of: T.self, name: nil), default: []].insert(cacheKey)
 			return .string(cacheKey)
 		}
 		try value.encode(to: encoder)
