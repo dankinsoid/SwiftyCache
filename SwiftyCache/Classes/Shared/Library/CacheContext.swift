@@ -73,17 +73,17 @@ public final class CacheContext {
 	
 	//Storages
 	
-	func nameForStorage<T>(of type: T.Type) -> String {
-		return String(reflecting: type)
+	func nameForStorage<T>(of type: T.Type, name: String?) -> String {
+		return String(reflecting: type) + (name ?? "")
 	}
 	
-	fileprivate func cacheStorage<T>(for type: T.Type) -> Storage<T>? {
-		let name = nameForStorage(of: type)
+	fileprivate func cacheStorage<T>(for type: T.Type, name storageName: String?) -> Storage<T>? {
+		let name = nameForStorage(of: type, name: storageName)
 		return storages[name] as? Storage<T>
 	}
 	
-	func createStorage<T>(of type: T.Type, transformer: Transformer<T>, diskConfig dc: DiskConfig? = nil, memoryConfig mc: MemoryConfig? = nil) -> Storage<T> {
-		let name = nameForStorage(of: type)
+	func createStorage<T>(of type: T.Type, name storageName: String?, transformer: Transformer<T>, diskConfig dc: DiskConfig? = nil, memoryConfig mc: MemoryConfig? = nil) -> Storage<T> {
+		let name = nameForStorage(of: type, name: storageName)
 		let storage: Storage<T>
 		let _diskConfig = DiskConfig(name: name, expiry: (dc ?? diskConfig).expiry, maxSize: (dc ?? diskConfig).maxSize, directory: (dc ?? diskConfig).directory, protectionType: (dc ?? diskConfig).protectionType)
 		let memoryStorage = MemoryStorage<T>(config: mc ?? memoryConfig)
@@ -101,25 +101,25 @@ public final class CacheContext {
 		return storage
 	}
 	
-	public func storage<T: Codable>(for type: T.Type, memoryConfig: MemoryConfig? = nil, diskConfig: DiskConfig? = nil) -> Storage<T> {
-		if let result = cacheStorage(for: type) {
+	public func storage<T: Codable>(for type: T.Type, name: String? = nil, memoryConfig: MemoryConfig? = nil, diskConfig: DiskConfig? = nil) -> Storage<T> {
+		if let result = cacheStorage(for: type, name: name) {
 			return result
 		}
-		return createStorage(of: type, transformer: transformer(), diskConfig: diskConfig, memoryConfig: memoryConfig)
+		return createStorage(of: type, name: name, transformer: transformer(), diskConfig: diskConfig, memoryConfig: memoryConfig)
 	}
 	
-	public func storage<T>(for type: T.Type, transformer: Transformer<T>, memoryConfig: MemoryConfig? = nil, diskConfig: DiskConfig? = nil) -> Storage<T> {
-		if let result = cacheStorage(for: type) {
+	public func storage<T>(for type: T.Type, name: String? = nil, transformer: Transformer<T>, memoryConfig: MemoryConfig? = nil, diskConfig: DiskConfig? = nil) -> Storage<T> {
+		if let result = cacheStorage(for: type, name: name) {
 			return result
 		}
-		return createStorage(of: type, transformer: transformer, diskConfig: diskConfig, memoryConfig: memoryConfig)
+		return createStorage(of: type, name: name, transformer: transformer, diskConfig: diskConfig, memoryConfig: memoryConfig)
 	}
 	
 	func anyStorage<T>(of type: T.Type) -> Storage<T> {
-		if let result = cacheStorage(for: type) {
+		if let result = cacheStorage(for: type, name: nil) {
 			return result
 		}
-		return createStorage(of: type, transformer: anyTransformer())
+		return createStorage(of: type, name: nil, transformer: anyTransformer())
 	}
 	
 	func diskStorage(name: String) -> DiskStorage<Data>? {
