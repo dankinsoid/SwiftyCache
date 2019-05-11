@@ -28,7 +28,6 @@ final public class DiskStorage<T> {
 	//fileprivate lazy var infoAtPath: [String: DiskEntity] = self.getInfo()
 	fileprivate lazy var cacheEncoder = CacheJSONEncoder()
 	fileprivate lazy var cacheDecoder = CacheJSONDecoder()
-	fileprivate lazy var dataTransformer = TransformerFactory.forData()
 
 	private let transformer: Transformer<T>
 	

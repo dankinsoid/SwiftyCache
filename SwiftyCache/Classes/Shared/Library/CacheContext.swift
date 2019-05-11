@@ -31,7 +31,7 @@ extension Storage: CacheStorageProtocol {
 	}
 	
 	func dataDiskStorage() -> DiskStorage<Data> {
-		return diskStorage.transform(transformer: TransformerFactory.forData())
+		return diskStorage.transform(transformer: Transformer())
 	}
 	
 }
@@ -127,7 +127,7 @@ public final class CacheContext {
 			return storage.dataDiskStorage()
 		}
 		let _diskConfig = DiskConfig(name: MD5(name), expiry: diskConfig.expiry, maxSize: diskConfig.maxSize, directory: diskConfig.directory, protectionType: diskConfig.protectionType)
-		let disk = try? DiskStorage(config: _diskConfig, fileManager: CacheContext.fileManager, transformer: TransformerFactory.forData())
+		let disk = try? DiskStorage(config: _diskConfig, fileManager: CacheContext.fileManager, transformer: Transformer<Data>())
 		disk?.context = self
 		disk?.storageName = name
 		return disk
