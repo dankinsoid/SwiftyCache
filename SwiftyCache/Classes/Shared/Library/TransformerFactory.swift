@@ -8,6 +8,12 @@ public class TransformerFactory {
 		return Transformer<Data>(toData: toData, fromData: fromData)
 	}
 	
+	public static func forString() -> Transformer<String> {
+		let toData: (String) throws -> Data = { try $0.data(using: .utf8)~! }
+		let fromData: (Data) throws -> String = { try String(data: $0, encoding: .utf8)~! }
+		return Transformer<String>(toData: toData, fromData: fromData)
+	}
+	
 	public static func forImage() -> Transformer<Image> {
 		let toData: (Image) throws -> Data = { image in
 			return try image.cache_toData().unwrap(catch: StorageError.transformerFail)
