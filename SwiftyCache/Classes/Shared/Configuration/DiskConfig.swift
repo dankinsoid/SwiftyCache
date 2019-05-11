@@ -15,19 +15,19 @@ public struct DiskConfig {
 	/// Support only on iOS and tvOS.
 	public let protectionType: FileProtectionType?
 	
-	public init(name: String, expiry: Expiry = .never,
+	public init(name: String?, expiry: Expiry = .never,
 				maxSize: UInt = 0, directory: URL? = nil,
 				protectionType: FileProtectionType? = nil) {
-		self.name = name
+		self.name = name ?? ("DiskStorage" + UUID().uuidString)
 		self.expiry = expiry
 		self.maxSize = maxSize
 		self.directory = directory
 		self.protectionType = protectionType
 	}
 	#else
-	public init(name: String, expiry: Expiry = .never,
+	public init(name: String?, expiry: Expiry = .never,
 				maxSize: UInt = 0, directory: URL? = nil) {
-		self.name = name
+		self.name = name ?? ("DiskStorage" + UUID().uuidString)
 		self.expiry = expiry
 		self.maxSize = maxSize
 		self.directory = directory
