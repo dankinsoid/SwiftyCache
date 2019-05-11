@@ -69,6 +69,23 @@ public protocol StorageAware: GenericStorage {
 	func isExpiredObject(forKey key: String) -> Bool
 }
 
+extension StorageAware {
+	
+	public subscript(_ key: String) -> T? {
+		get {
+			return object(forKey: key)
+		}
+		set {
+			if let value = newValue {
+				try? setObject(value, forKey: key, expiry: nil)
+			} else {
+				try? removeObject(forKey: key)
+			}
+		}
+	}
+	
+}
+
 extension StorageAware where T: CacheReferenceable {
 	
 	@discardableResult
