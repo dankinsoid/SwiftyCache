@@ -6,11 +6,11 @@ import Dispatch
 public class AsyncStorage<Storage: StorageAware> {
 	public typealias T = Storage.T
 	public let innerStorage: Storage
-	public let serialQueue: DispatchQueue
+	private let serialQueue: DispatchQueue
 	
-	init(storage: Storage, serialQueue: DispatchQueue? = nil) {
+	init(_ storage: Storage, serialQueue: DispatchQueue? = nil) {
 		self.innerStorage = storage
-		self.serialQueue = serialQueue ?? DispatchQueue(label: UUID().uuidString)
+		self.serialQueue = serialQueue ?? DispatchQueue(label: "Cache.AsyncStorage.SerialQueue")
 	}
 	
 }

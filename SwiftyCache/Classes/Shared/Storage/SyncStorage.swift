@@ -5,11 +5,16 @@ import Dispatch
 /// Block the current queue until the operation completes.
 public class SyncStorage<T> {
 	public let innerStorage: HybridStorage<T>
-	public let serialQueue: DispatchQueue
+	private let serialQueue: DispatchQueue
+	private var isCurrentQueue = false
 	
-	public init(storage: HybridStorage<T>, serialQueue: DispatchQueue) {
-		self.innerStorage = storage
-		self.serialQueue = serialQueue
+	public convenience init(_ storage: HybridStorage<T>) {
+		self.init(storage, queue: DispatchQueue(label: "Cache.SyncStorage.SerialQueue." + UUID().uuidString))
+	}
+	
+	private init(_ storage: HybridStorage<T>, queue: DispatchQueue) {
+		innerStorage = storage
+		serialQueue = queue
 	}
 }
 
@@ -61,23 +66,27 @@ extension SyncStorage: StorageAware {
 	}
 	
 	private func sync<R>(_ block: () throws -> R) rethrows -> R {
-		if OperationQueue.current?.underlyingQueue === serialQueue {
+		if isCurrentQueue {
 			return try block()
 		}
 		var result: R?
 		try serialQueue.sync {
+			isCurrentQueue = true
 			result = try block()
+			isCurrentQueue = false
 		}
 		return result!
 	}
 	
 	private func sync<T, R>(_ block: (T) throws -> R, value: T) rethrows -> R {
-		if OperationQueue.current?.underlyingQueue === serialQueue {
+		if isCurrentQueue {
 			return try block(value)
 		}
 		var result: R?
 		try serialQueue.sync {
+			isCurrentQueue = true
 			result = try block(value)
+			isCurrentQueue = false
 		}
 		return result!
 	}
@@ -86,10 +95,9 @@ extension SyncStorage: StorageAware {
 public extension SyncStorage {
 	func transform<U>(transformer: Transformer<U>) -> SyncStorage<U> {
 		let storage = SyncStorage<U>(
-			storage: innerStorage.transform(transformer: transformer),
-			serialQueue: serialQueue
+			innerStorage.transform(transformer: transformer),
+			queue: serialQueue
 		)
-		
 		return storage
 	}
 }

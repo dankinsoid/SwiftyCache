@@ -37,14 +37,8 @@ public final class Storage<T> {
 	/// - Paraeter: asyncStorage: Asynchronous storage
 	init(hybridStorage: HybridStorage<T>) {
 		self.hybridStorage = hybridStorage
-		self.syncStorage = SyncStorage(
-			storage: hybridStorage,
-			serialQueue: DispatchQueue(label: "Cache.SyncStorage.SerialQueue")
-		)
-		self.asyncStorage = AsyncStorage(
-			storage: hybridStorage,
-			serialQueue: DispatchQueue(label: "Cache.AsyncStorage.SerialQueue")
-		)
+		self.syncStorage = SyncStorage(hybridStorage)
+		self.asyncStorage = AsyncStorage(hybridStorage)
 	}
 	
 }
