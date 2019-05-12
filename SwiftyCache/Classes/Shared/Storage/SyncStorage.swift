@@ -3,7 +3,7 @@ import Dispatch
 
 /// Manipulate storage in a "all sync" manner.
 /// Block the current queue until the operation completes.
-public class SyncStorage<T> {
+public class SyncStorage<T>: StorageAware {//where T == Storage.T {
 	public let innerStorage: HybridStorage<T>
 	private let serialQueue: DispatchQueue
 	private var isCurrentQueue = false
@@ -18,7 +18,7 @@ public class SyncStorage<T> {
 	}
 }
 
-extension SyncStorage: StorageAware {
+extension SyncStorage {
 	
 	public var count: Int {
 		return sync( { _ in innerStorage.count } , value: ())
@@ -51,10 +51,6 @@ extension SyncStorage: StorageAware {
 	
 	public func setObject(_ object: T, forKey key: String, expiry: Expiry? = nil) throws {
 		try sync(innerStorage.setObject, value: (object, key, expiry))
-	}
-	
-	func setObject(_ object: T, forKey key: String, referenced: (String, String)?, expiry: Expiry? = nil) throws {
-		try sync(innerStorage.setObject, value: (object, key, referenced, expiry))
 	}
 	
 	public func removeAll() throws {
@@ -90,9 +86,15 @@ extension SyncStorage: StorageAware {
 		}
 		return result!
 	}
-}
-
-public extension SyncStorage {
+	
+	func setObject(_ object: T, forKey key: String, referenced: (String, String)?, expiry: Expiry? = nil) throws {
+		try sync(innerStorage.setObject, value: (object, key, referenced, expiry))
+	}
+	
+	public func synchronize() throws {
+		try sync(innerStorage.synchronize)
+	}
+	
 	func transform<U>(transformer: Transformer<U>) -> SyncStorage<U> {
 		let storage = SyncStorage<U>(
 			innerStorage.transform(transformer: transformer),
@@ -100,12 +102,4 @@ public extension SyncStorage {
 		)
 		return storage
 	}
-}
-
-extension SyncStorage {// where Storage == HybridStorage<T> {
-	
-	public func synchronize() throws {
-		try sync(innerStorage.synchronize)
-	}
-	
 }
