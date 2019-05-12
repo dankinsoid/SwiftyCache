@@ -53,14 +53,28 @@ extension SyncStorage: StorageAware {
 	}
 	
 	public func removeAll() throws {
-		try serialQueue.sync(execute: innerStorage.removeAll)
+		try sync(innerStorage.removeAll)
 	}
 	
 	public func removeExpiredObjects() throws {
-		try serialQueue.sync(execute: innerStorage.removeExpiredObjects)
+		try sync(innerStorage.removeExpiredObjects)
+	}
+	
+	private func sync<R>(_ block: () throws -> R) rethrows -> R {
+		if OperationQueue.current?.underlyingQueue === serialQueue {
+			return try block()
+		}
+		var result: R?
+		try serialQueue.sync {
+			result = try block()
+		}
+		return result!
 	}
 	
 	private func sync<T, R>(_ block: (T) throws -> R, value: T) rethrows -> R {
+		if OperationQueue.current?.underlyingQueue === serialQueue {
+			return try block(value)
+		}
 		var result: R?
 		try serialQueue.sync {
 			result = try block(value)
@@ -83,7 +97,7 @@ public extension SyncStorage {
 extension SyncStorage {// where Storage == HybridStorage<T> {
 	
 	public func synchronize() throws {
-		try serialQueue.sync(execute: innerStorage.synchronize)
+		try sync(innerStorage.synchronize)
 	}
 	
 }
