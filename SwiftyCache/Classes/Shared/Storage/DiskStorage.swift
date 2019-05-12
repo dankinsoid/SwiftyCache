@@ -249,9 +249,15 @@ extension DiskStorage: StorageAware {
 	}
 	
 	public func removeAll() throws {
-		try fileManager.removeItem(atPath: path)
-		info = [:]
-		try createDirectory()
+		try removeAllBlock()()
+	}
+	
+	func removeAllBlock() -> () throws -> () {
+		return { [weak self, fileManager, path] in
+			try fileManager.removeItem(atPath: path)
+			self?.info = [:]
+			try self?.createDirectory()
+		}
 	}
 	
 	public func allEntries() throws -> [Entry<T>] {

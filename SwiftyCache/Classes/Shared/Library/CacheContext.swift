@@ -12,28 +12,13 @@ public protocol CacheReferenceable: Codable {
 	var cachePrimaryKey: String { get }
 }
 
-protocol CacheStorageProtocol {
+protocol CacheStorageProtocol: class {
 	func removeAll() throws
 	func removeObject(forKey key: String) throws
-	func removeFromMemory(forKey key: String) throws
+	func removeFromMemory(forKey key: String)
 	func dataDiskStorage() -> DiskStorage<Data>
 	func synchronize() throws
 	func removeExpiredObjects() throws
-}
-
-extension Storage: CacheStorageProtocol {
-	
-	func removeFromMemory(forKey key: String) throws {
-		if !immediatelyOnDisk, let object = memoryStorage.object(forKey: key) {
-			try diskStorage.setObject(object, forKey: key)
-		}
-		memoryStorage.removeObject(forKey: key)
-	}
-	
-	func dataDiskStorage() -> DiskStorage<Data> {
-		return diskStorage.transform(transformer: Transformer())
-	}
-	
 }
 
 public final class CacheContext {
@@ -45,6 +30,7 @@ public final class CacheContext {
 	private(set) var storages: [String: CacheStorageProtocol] = [:]
 	private let memoryConfig: MemoryConfig
 	private let diskConfig: DiskConfig
+	private let path: String?
 	public let name: String
 	public let immediatelyOnDisk: Bool
 	
@@ -58,6 +44,7 @@ public final class CacheContext {
 		self.memoryConfig = defaultMemoryConfig ?? MemoryConfig(expiry: .never, countLimit: 0, totalCostLimit: 0)
 		let url = defaultDiskConfig?.directory ?? CacheContext.createCacheDirectory(name: name)
 		self.diskConfig = defaultDiskConfig ?? DiskConfig(name: name, expiry: .never, directory: url)
+		self.path = url?.path
 		CacheContext.contexts[name] = self
 	}
 	
@@ -79,7 +66,7 @@ public final class CacheContext {
 	
 	fileprivate func cacheStorage<T>(for type: T.Type, name storageName: String?) -> Storage<T>? {
 		let name = nameForStorage(of: type, name: storageName)
-		return storages[name] as? Storage<T>
+		return (storages[name] as? CStorage<T>)?.storage
 	}
 	
 	func createStorage<T>(of type: T.Type, transformer: Transformer<T>, diskConfig dc: DiskConfig? = nil, memoryConfig mc: MemoryConfig? = nil) -> Storage<T> {
@@ -97,7 +84,7 @@ public final class CacheContext {
 		storage = Storage<T>(hybridStorage: hybridStorage)
 		storage.diskStorage.context = self
 		storage.diskStorage.storageName = name
-		storages[name] = storage
+		storages[name] = CStorage(storage)
 		return storage
 	}
 	
@@ -197,6 +184,64 @@ public final class CacheContext {
 			} catch {
 				completion?(.failure(error))
 			}
+		}
+	}
+	
+}
+
+fileprivate final class CStorage<T>: CacheStorageProtocol {
+	private weak var _storage: Storage<T>?
+	let disk: DiskStorage<T>
+	let memoryConfig: MemoryConfig
+	let immediatelyOnDisk: Bool
+	
+	var storage: Storage<T> {
+		return _storage ?? Storage(hybridStorage: HybridStorage(
+			memoryStorage: MemoryStorage(config: memoryConfig),
+			diskStorage: disk,
+			immediatelyOnDisk: immediatelyOnDisk))
+	}
+	
+	init(_ storage: Storage<T>) {
+		_storage = storage
+		disk = storage.diskStorage
+		memoryConfig = storage.memoryStorage.config
+		immediatelyOnDisk = storage.immediatelyOnDisk
+	}
+	
+	func removeAll() throws {
+		if let storage = _storage {
+			try storage.removeAll()
+		} else {
+			try disk.removeAll()
+		}
+	}
+	
+	func removeObject(forKey key: String) throws {
+		if let storage = _storage {
+			try storage.removeObject(forKey: key)
+		} else {
+			try disk.removeObject(forKey: key)
+		}
+	}
+	
+	func removeFromMemory(forKey key: String) {
+		_storage?.memoryStorage.removeObject(forKey: key)
+	}
+	
+	func dataDiskStorage() -> DiskStorage<Data> {
+		return disk.transform(transformer: Transformer())
+	}
+	
+	func synchronize() throws {
+		try? _storage?.synchronize()
+	}
+	
+	func removeExpiredObjects() throws {
+		if let storage = _storage {
+			try storage.removeExpiredObjects()
+		} else {
+			try disk.removeExpiredObjects()
 		}
 	}
 	

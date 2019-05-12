@@ -25,15 +25,15 @@ extension SyncStorage: StorageAware {
 	}
 	
 	public func object(forKey key: String) -> T? {
-		return sync(innerStorage.object , value: key)
+		return sync(innerStorage.object, value: key)
 	}
 	
 	public func existsObject(forKey key: String) -> Bool {
-		return sync(innerStorage.existsObject , value: key)
+		return sync(innerStorage.existsObject, value: key)
 	}
 	
 	public func isExpiredObject(forKey key: String) -> Bool {
-		return sync(innerStorage.isExpiredObject , value: key)
+		return sync(innerStorage.isExpiredObject, value: key)
 	}
 	
 	

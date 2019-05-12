@@ -15,7 +15,7 @@ public class MemoryStorage<T> {
 	public var allKeys: Set<String> { return cache.allKeys }
 	public var count: Int { return cache.count }
 	/// Configuration
-	fileprivate let config: MemoryConfig
+	public let config: MemoryConfig
 	var willEvict: ((String, T) -> ())?
 	
 	private(set) var storageObservations = [UUID: (MemoryStorage, StorageChange) -> Void]()
