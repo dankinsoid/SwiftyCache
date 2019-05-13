@@ -348,11 +348,7 @@ extension DiskStorage {
 			var components = url.path.components(separatedBy: self.path)
 			if components.count > 1 {
 				components.removeFirst()
-				if components.count > 1 {
-					path = components.joined(separator: self.path)
-				} else {
-					path = self.path + components[0]
-				}
+				path = self.path + components.joined(separator: self.path)
 			} else {
 				path = url.path
 			}
