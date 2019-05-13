@@ -8,6 +8,22 @@
 
 import RxSwift
 
+extension Reactive where Base: StorageObservationRegistry {
+	
+	public var change: Observable<StorageChange> {
+		return Observable.create({[base] observer -> Disposable in
+			var storageObserver: StorageObserver? = StorageObserver()
+			let token = base.addStorageObserver(storageObserver!) { (_, _, change) in
+				observer.onNext(change)
+			}
+			return Disposables.create {
+				storageObserver = nil
+				token.cancel()
+			}
+		})
+	}
+}
+
 extension Reactive where Base: KeyObservationRegistry, Base.S: StorageAware {
 	
 	public func object(for key: String) -> StorageSubject<Base.S.T> {
@@ -159,6 +175,15 @@ public class AbstractStorageSubject<S>: ObserverType, ObservableType {
 
 public final class StorageSubject<S>: AbstractStorageSubject<S> {
 	
+	public var value: E {
+		get {
+			return get()
+		}
+		set {
+			onNext(newValue)
+		}
+	}
+	
 	public init<O: KeyObservationRegistry>(observer: O, key: String) where O.S.T == S, O.S: StorageAware {
 		super.init(_observer: observer, key: key)
 	}
@@ -180,6 +205,15 @@ public final class StorageSubject<S>: AbstractStorageSubject<S> {
 public final class StorageNotNilSubject<S>: AbstractStorageSubject<S> {
 	
 	private let defaultValue: S
+	
+	public var value: S {
+		get {
+			return get() ?? defaultValue
+		}
+		set {
+			onNext(newValue)
+		}
+	}
 	
 	public init<O: KeyObservationRegistry>(observer: O, key: String, default value: S) where O.S.T == S, O.S: StorageAware {
 		defaultValue = value
