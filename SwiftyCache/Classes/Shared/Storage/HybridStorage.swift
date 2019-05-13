@@ -56,9 +56,7 @@ public final class HybridStorage<T> {
 		DispatchQueue.global().async {[diskStorage, memoryStorage, immediatelyOnDisk] in
 			memoryStorage.removeExpiredObjects()
 			try? diskStorage.removeExpiredObjects()
-			if !immediatelyOnDisk {
-				try? HybridStorage<T>.synchronize(disk: diskStorage, memory: memoryStorage)
-			}
+			try? HybridStorage<T>.synchronize(disk: diskStorage, memory: memoryStorage, immediatelyOnDisk: immediatelyOnDisk)
 		}
 	}
 	
@@ -126,11 +124,11 @@ extension HybridStorage: StorageAware {
 	
 	public func synchronize() throws {
 		//try removeExpiredObjects()
-		guard !immediatelyOnDisk else { return }
-		try HybridStorage<T>.synchronize(disk: diskStorage, memory: memoryStorage)
+		try HybridStorage<T>.synchronize(disk: diskStorage, memory: memoryStorage, immediatelyOnDisk: immediatelyOnDisk)
 	}
 	
-	private static func synchronize(disk: DiskStorage<T>, memory: MemoryStorage<T>) throws {
+	private static func synchronize(disk: DiskStorage<T>, memory: MemoryStorage<T>, immediatelyOnDisk: Bool) throws {
+		guard !immediatelyOnDisk || (T.self as? AnyObject.Type) != nil else { return }
 		for key in memory.allKeys {
 			guard let value = memory.object(forKey: key) else { continue }
 			try disk.setObject(value, forKey: key)

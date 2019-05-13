@@ -175,10 +175,6 @@ public class AbstractStorageSubject<S>: ObserverType, ObservableType {
 
 public final class StorageSubject<S>: AbstractStorageSubject<S> {
 	
-	public var value: E {
-		return object(key)
-	}
-	
 	public init<O: KeyObservationRegistry>(observer: O, key: String) where O.S.T == S, O.S: StorageAware {
 		super.init(_observer: observer, key: key)
 	}
@@ -190,15 +186,16 @@ public final class StorageSubject<S>: AbstractStorageSubject<S> {
 	public init<O: AsyncStorageAware>(observer: O, key: String) where O.Storage.T == S, O.Storage: KeyObservationRegistry, O.Storage.S.T == S {
 		super.init(_observer: observer, key: key)
 	}
+	
+	public func get() -> E {
+		return object(key)
+	}
+	
 }
 
 public final class StorageNoNillSubject<S>: AbstractStorageSubject<S> {
 	
 	private let defaultValue: S
-	
-	public var value: S {
-		return object(key) ?? defaultValue
-	}
 	
 	public init<O: KeyObservationRegistry>(observer: O, key: String, default value: S) where O.S.T == S, O.S: StorageAware {
 		defaultValue = value
@@ -213,6 +210,10 @@ public final class StorageNoNillSubject<S>: AbstractStorageSubject<S> {
 	public init<O: AsyncStorageAware>(observer: O, key: String, default value: S) where O.Storage.T == S, O.Storage: KeyObservationRegistry, O.Storage.S.T == S {
 		defaultValue = value
 		super.init(_observer: observer, key: key)
+	}
+	
+	public func get() -> S {
+		return object(key) ?? defaultValue
 	}
 	
 }
