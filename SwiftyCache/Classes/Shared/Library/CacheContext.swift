@@ -72,7 +72,7 @@ public final class CacheContext {
 	func createStorage<T>(of type: T.Type, transformer: Transformer<T>, diskConfig dc: DiskConfig? = nil, memoryConfig mc: MemoryConfig? = nil) -> Storage<T> {
 		let name = nameForStorage(of: type, name: dc?.name)
 		let storage: Storage<T>
-		let _diskConfig = DiskConfig(name: name, expiry: (dc ?? diskConfig).expiry, maxSize: (dc ?? diskConfig).maxSize, directory: dc?.directory ?? diskConfig.directory, protectionType: (dc ?? diskConfig).protectionType)
+		let _diskConfig = DiskConfig(name: name, expiry: (dc ?? diskConfig).expiry, maxSize: (dc ?? diskConfig).maxSize, directory: dc?.directory ?? diskConfig.directory, protectionType: dc?.protectionType ?? diskConfig.protectionType)
 		let memoryStorage = MemoryStorage<T>(config: mc ?? memoryConfig)
 		let diskStorage: DiskStorage<T>
 		do {

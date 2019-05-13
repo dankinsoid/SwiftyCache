@@ -179,13 +179,13 @@ extension DiskStorage: StorageAware {
 					try storage.removeFromMemory(forKey: key)
 				}
 			}
-			data = try DataSerializer.serialize(data: _data, info: objectInfo.entity)
+			data = DataSerializer.serialize(data: _data, info: objectInfo.entity)
 		} else {
 			data = try DataSerializer.serialize(object: object, info: objectInfo.entity, transformer: transformer)
 		}
 		objectInfo.fileSize = data.count
 		try set(data, forKey: key, expiry: expiry)
-		try set(info: objectInfo, forKey: key)
+		set(info: objectInfo, forKey: key)
 	}
 	
 	@discardableResult
@@ -201,7 +201,7 @@ extension DiskStorage: StorageAware {
 		return nil
 	}
 	
-	private func set(info: EntityInfo, forKey key: String) throws {
+	private func set(info: EntityInfo, forKey key: String) {
 		self.info[makeFilePath(for: key)] = info
 	}
 	
@@ -321,16 +321,7 @@ extension DiskStorage {
 	- Returns: A md5 string
 	*/
 	func makeFileName(for key: String) -> String {
-		let result: String
-		let fileExtension = URL(fileURLWithPath: key).pathExtension
-		let fileName = MD5(key)
-		switch fileExtension.isEmpty {
-		case true:
-			result = fileName
-		case false:
-			result = "\(fileName).\(fileExtension)"
-		}
-		return result
+		return MD5(key)
 	}
 	
 	/**
@@ -339,6 +330,7 @@ extension DiskStorage {
 	- Returns: A string path based on key
 	*/
 	func makeFilePath(for key: String) -> String {
+		//return URL(fileURLWithPath: path).appendingPathComponent(makeFileName(for: key)).path
 		return "\(path)/\(makeFileName(for: key))"
 	}
 	
@@ -350,11 +342,19 @@ extension DiskStorage {
 			options: .skipsHiddenFiles,
 			errorHandler: nil
 		)
-		
-		guard let urlArray = fileEnumerator?.allObjects as? [URL] else {
-			throw Error.fileEnumeratorFailed
+		var result: [URL] = []
+		while let url = fileEnumerator?.nextObject() as? URL {
+			let path: String
+			var components = url.path.components(separatedBy: self.path)
+			if components.count > 1 {
+				components.removeFirst()
+				path = components.joined(separator: self.path)
+			} else {
+				path = url.path
+			}
+			result.append(URL(fileURLWithPath: path))
 		}
-		return urlArray
+		return result
 	}
 	
 	/// Calculates total disk cache size.

@@ -8,7 +8,7 @@ enum DataSerializer {
 		return try serialize(data: data, info: info)
 	}
 	
-	static func serialize(data: Data, info: DiskEntity) throws -> Data {
+	static func serialize(data: Data, info: DiskEntity) -> Data {
 		var encoder = ProtobufJSONEncoder()
 		info.encode(to: &encoder)
 		encoder.comma()
