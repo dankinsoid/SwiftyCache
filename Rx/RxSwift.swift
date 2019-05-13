@@ -97,7 +97,7 @@ public class AbstractStorageSubject<S>: ObserverType, ObservableType {
 		self.setObject = { observer.setObject($0, forKey: $1, expiry: $2, completion: nil) }
 		self.removeObject = { observer.removeObject(forKey: $0, completion: nil ) }
 		self.object = observer.innerStorage.object
-		self.existsObject = observer.observedStorage.existsObject
+		self.existsObject = observer.innerStorage.existsObject
 		self.addObserver = { anyObj, block in
 			return observer.innerStorage.addObserver(anyObj, forKey: key, closure: { (_, _, change) in block(change) })
 		}
