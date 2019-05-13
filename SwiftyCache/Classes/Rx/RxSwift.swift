@@ -7,7 +7,6 @@
 //
 
 import RxSwift
-import VDCache
 
 extension Reactive where Base: KeyObservationRegistry, Base.S: StorageAware {
 	

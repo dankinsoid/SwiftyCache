@@ -8,7 +8,7 @@
 
 Pod::Spec.new do |s|
   s.name             = 'VDCache'
-  s.version          = '0.7.9'
+  s.version          = '0.7.10'
   s.summary          = 'VDCache is a framework for caching data'
 
 # This description is used to generate tags and improve search results.
