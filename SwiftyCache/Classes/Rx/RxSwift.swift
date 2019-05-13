@@ -7,25 +7,11 @@
 //
 
 import RxSwift
-
-extension Reactive where Base: StorageObservationRegistry {
-	
-	public var change: Observable<StorageChange> {
-		return Observable.create({[base] observer -> Disposable in
-			var storageObserver: StorageObserver? = StorageObserver()
-			let token = base.addStorageObserver(storageObserver!) { (_, _, change) in
-				observer.onNext(change)
-			}
-			return Disposables.create {
-				storageObserver = nil
-				token.cancel()
-			}
-		})
-	}
-}
+import RxCocoa
+import VDCache
 
 extension Reactive where Base: KeyObservationRegistry, Base.S: StorageAware {
-
+	
 	public func object(for key: String) -> StorageSubject<Base.S.T> {
 		return StorageSubject(observer: base, key: key)
 	}
@@ -54,7 +40,7 @@ extension Reactive where Base: AsyncStorageAware, Base.Storage: KeyObservationRe
 		return StorageSubject(observer: base, key: key)
 	}
 	
-	public func object(for key: String, default value: Base.S.T) -> StorageNotNilSubject<Base.S.T> {
+	public func object(for key: String, default value: Base.Storage.T) -> StorageNotNilSubject<Base.Storage.T> {
 		return StorageNotNilSubject(observer: base, key: key, default: value)
 	}
 	
@@ -65,13 +51,13 @@ public class AbstractStorageSubject<S>: ObserverType, ObservableType {
 	
 	public let key: String
 	
-	private let setObject: (S, String, Expiry?) throws -> ()
-	private let removeObject: (String) throws -> ()
-	private let existsObject: (String) -> Bool
-	private let object: (String) -> S?
-	private let addObserver: (StorageObserver, @escaping (KeyChange<S>) -> ()) -> ObservationToken
+	fileprivate let setObject: (S, String, Expiry?) throws -> ()
+	fileprivate let removeObject: (String) throws -> ()
+	fileprivate let existsObject: (String) -> Bool
+	fileprivate let object: (String) -> S?
+	fileprivate let addObserver: (StorageObserver, @escaping (KeyChange<S>) -> ()) -> ObservationToken
 	
-	fileprivate init<O: KeyObservationRegistry>(_observer: O, key: String) where O.S.T == S, O.S: StorageAware {
+	fileprivate init<O: KeyObservationRegistry>(_observer observer: O, key: String) where O.S.T == S, O.S: StorageAware {
 		self.setObject = observer.observedStorage.setObject
 		self.removeObject = observer.observedStorage.removeObject
 		self.object = observer.observedStorage.object
@@ -82,7 +68,7 @@ public class AbstractStorageSubject<S>: ObserverType, ObservableType {
 		self.key = key
 	}
 	
-	fileprivate init<O: KeyObservationRegistry>(_observer: O, key: String) where O.S.T == S, O.S: MemoryStorageAware {
+	fileprivate init<O: KeyObservationRegistry>(_observer observer: O, key: String) where O.S.T == S, O.S: MemoryStorageAware {
 		self.setObject = observer.observedStorage.setObject
 		self.removeObject = observer.observedStorage.removeObject
 		self.object = observer.observedStorage.object
@@ -93,7 +79,7 @@ public class AbstractStorageSubject<S>: ObserverType, ObservableType {
 		self.key = key
 	}
 	
-	fileprivate init<O: AsyncStorageAware>(_observer: O, key: String) where O.Storage.T == S, O.Storage: KeyObservationRegistry, O.Storage.S.T == S {
+	fileprivate init<O: AsyncStorageAware>(_observer observer: O, key: String) where O.Storage.T == S, O.Storage: KeyObservationRegistry, O.Storage.S.T == S {
 		self.setObject = { observer.setObject($0, forKey: $1, expiry: $2, completion: nil) }
 		self.removeObject = { observer.removeObject(forKey: $0, completion: nil ) }
 		self.object = observer.innerStorage.object
@@ -144,7 +130,7 @@ public class AbstractStorageSubject<S>: ObserverType, ObservableType {
 	
 	public func subscribe<O: ObserverType>(_ observer: O) -> Disposable where E == O.E {
 		var storageObserver: StorageObserver? = StorageObserver()
-		observer.onNext(value)
+		observer.onNext(object(key))
 		let token = addObserver(storageObserver!) { change in
 			switch change {
 			case .set(let new):
@@ -163,7 +149,7 @@ public class AbstractStorageSubject<S>: ObserverType, ObservableType {
 		try setObject(value, key, nil)
 	}
 	
-	public func remove() throw {
+	public func remove() throws {
 		try removeObject(key)
 	}
 	
@@ -193,7 +179,7 @@ public final class StorageSubject<S>: AbstractStorageSubject<S> {
 	
 }
 
-public final class StorageNoNillSubject<S>: AbstractStorageSubject<S> {
+public final class StorageNotNilSubject<S>: AbstractStorageSubject<S> {
 	
 	private let defaultValue: S
 	

@@ -4,6 +4,7 @@ public protocol MemoryStorageAware: GenericStorage {
 	func object(forKey: String) -> T?
 	func removeObject(forKey key: String)
 	func setObject(_ object: T, forKey key: String, expiry: Expiry?)
+	func existsObject(forKey key: String) -> Bool
 }
 
 public class MemoryStorage<T> {
