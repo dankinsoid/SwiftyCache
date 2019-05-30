@@ -80,12 +80,12 @@ struct DataSerializer {
 	
 	func decrypt(_ data: Data) throws -> Data {
 		guard encrypt, let key = cryptoKey, let iv = self.iv else { return data }
-		return try Data(AES(key: key, blockMode: CBC(iv: iv), padding: .pkcs7).decrypt(data))
+		return try Data(AES(key: key, blockMode: CBC(iv: iv), padding: .pkcs7).decrypt(Array(data)))
 	}
 	
 	func encrypt(_ data: Data) throws -> Data {
 		guard encrypt, let key = cryptoKey, let iv = self.iv else { return data }
-		return try Data(AES(key: key, blockMode: CBC(iv: iv), padding: .pkcs7).encrypt(data))
+		return try Data(AES(key: key, blockMode: CBC(iv: iv), padding: .pkcs7).encrypt(Array(data)))
 	}
 	
 }

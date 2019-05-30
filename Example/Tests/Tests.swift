@@ -1,5 +1,5 @@
 import XCTest
-import SwiftyCache
+import VDCache
 
 class Tests: XCTestCase {
     

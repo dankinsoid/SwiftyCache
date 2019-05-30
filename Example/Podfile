@@ -1,6 +1,6 @@
 use_frameworks!
 target 'SwiftyCache_Tests' do
-  pod 'SwiftyCache', :path => '../'
-  
-  
+  pod 'VDCache', :path => '../'
+  pod 'RxSwift'
+  pod 'CryptoSwift'
 end
