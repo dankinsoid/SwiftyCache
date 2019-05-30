@@ -8,7 +8,6 @@
 
 import Foundation
 import Security
-import VDCache
 
 public enum KeychainRegulator {
 	public static func clearKeychain() throws {
@@ -32,6 +31,8 @@ public final class KeychainStorage<T>: StorageAware {
 	//private var lastResultCode: OSStatus = noErr
 	public let name: String
 	private let transformer: Transformer<T>
+	private(set) var storageObservations = [UUID: (KeychainStorage, StorageChange) -> Void]()
+	private(set) var keyObservations: [String: [UUID: (KeychainStorage, KeyChange<T>) -> Void]] = [:]
 	
 	public init(name: String, synchronizeWithICloud: Bool = false, accessGroup: String? = nil, withAccess access: KeychainSwiftAccessOptions? = nil, transformer: Transformer<T>) {
 		self.name = name
@@ -86,6 +87,8 @@ public final class KeychainStorage<T>: StorageAware {
 		lock.lock()
 		defer { lock.unlock() }
 		try setNoLock(transformer.toData(object), forKey: key, withAccess: access ?? self.access, expiry: expiry)
+		notifyStorageObservers(about: .set(key: key))
+		notifyObserver(forKey: key, about: .set(value: object))
 	}
 	
 	public func setObject(_ object: T, forKey key: String, expiry: Expiry? = nil) throws {
@@ -113,6 +116,8 @@ public final class KeychainStorage<T>: StorageAware {
 		guard lastResultCode == noErr else {
 			throw KeychainError.unhandledError(status: lastResultCode)
 		}
+		notifyStorageObservers(about: .removeAll)
+		notifyKeyObservers(about: .remove)
 	}
 	
 	public func isExpiredObject(forKey key: String) -> Bool {
@@ -216,6 +221,8 @@ public final class KeychainStorage<T>: StorageAware {
 	
 	private func deleteNoLock(_ key: String) throws {
 		try deleteNoLock(final: getKey(key))
+		notifyStorageObservers(about: .remove(key: key))
+		notifyObserver(forKey: key, about: .remove)
 	}
 	
 	private func deleteNoLock(final key: String) throws {
@@ -282,6 +289,78 @@ extension KeychainStorage where T: Codable {
 		self.init(name: name, synchronizeWithICloud: synchronizeWithICloud, accessGroup: accessGroup, withAccess: access, transformer: Transformer())
 	}
 	
+}
+
+extension KeychainStorage: StorageObservationRegistry {
+	
+	@discardableResult
+	public func addStorageObserver<O: AnyObject>(_ observer: O, closure: @escaping (O, KeychainStorage, StorageChange) -> Void) -> ObservationToken {
+		let id = UUID()
+		
+		storageObservations[id] = { [weak self, weak observer] storage, change in
+			guard let observer = observer else {
+				self?.storageObservations.removeValue(forKey: id)
+				return
+			}
+			
+			closure(observer, storage, change)
+		}
+		
+		return ObservationToken { [weak self] in
+			self?.storageObservations.removeValue(forKey: id)
+		}
+	}
+	
+	public func removeAllStorageObservers() {
+		storageObservations.removeAll()
+	}
+	
+	private func notifyStorageObservers(about change: StorageChange) {
+		storageObservations.values.forEach { closure in
+			closure(self, change)
+		}
+	}
+	
+}
+
+extension KeychainStorage: KeyObservationRegistry {
+	
+	@discardableResult
+	public func addObserver<O: AnyObject>(_ observer: O, forKey key: String,
+										  closure: @escaping (O, KeychainStorage<T>, KeyChange<T>) -> Void) -> ObservationToken {
+		let id = UUID()
+		keyObservations[key, default: [:]][id] = { [weak self, weak observer] storage, change in
+			guard let observer = observer else {
+				self?.removeObserver(forKey: key)
+				return
+			}
+			closure(observer, storage, change)
+		}
+		return ObservationToken { [weak self] in
+			self?.keyObservations[key]?[id] = nil
+			if self?.keyObservations[key]?.isEmpty == true {
+				self?.keyObservations[key] = nil
+			}
+		}
+	}
+	
+	public func removeObserver(forKey key: String) {
+		keyObservations.removeValue(forKey: key)
+	}
+	
+	public func removeAllKeyObservers() {
+		keyObservations.removeAll()
+	}
+	
+	private func notifyObserver(forKey key: String, about change: KeyChange<T>) {
+		keyObservations[key]?.forEach( { $0.value(self, change) } )
+	}
+	
+	private func notifyKeyObservers(about change: KeyChange<T>) {
+		keyObservations.values.forEach { observers in
+			observers.forEach { $0.value(self, change) }
+		}
+	}
 }
 
 enum KeychainError: Error {
