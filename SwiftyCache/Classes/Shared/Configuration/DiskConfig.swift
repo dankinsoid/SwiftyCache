@@ -15,6 +15,17 @@ public struct DiskConfig {
 	
 	public let customCryptoKey: String?
 	
+	public var encryptionType: EncryptionType {
+		if !useEncryption {
+			return .none
+		}
+		if let key = customCryptoKey {
+			return .withCustomKey(key)
+		} else {
+			return .withRandomKey
+		}
+	}
+	
 	#if os(iOS) || os(tvOS)
 	/// Data protection is used to store files in an encrypted format on disk and to decrypt them on demand.
 	/// Support only on iOS and tvOS.
