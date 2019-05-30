@@ -10,28 +10,60 @@ public struct DiskConfig {
 	public var maxSize: UInt
 	/// A folder to store the disk cache contents. Defaults to a prefixed directory in Caches if nil
 	public let directory: URL?
+	
+	public let useEncryption: Bool
+	
+	public let customCryptoKey: String?
+	
 	#if os(iOS) || os(tvOS)
 	/// Data protection is used to store files in an encrypted format on disk and to decrypt them on demand.
 	/// Support only on iOS and tvOS.
 	public let protectionType: FileProtectionType?
-	
 	public init(name: String?, expiry: Expiry = .never,
 				maxSize: UInt = 0, directory: URL? = nil,
-				protectionType: FileProtectionType? = nil) {
+				protectionType: FileProtectionType? = nil,
+				encryptionType: EncryptionType = .none) {
 		self.name = name ?? ("DiskStorage" + UUID().uuidString)
 		self.expiry = expiry
 		self.maxSize = maxSize
 		self.directory = directory
 		self.protectionType = protectionType
+		switch encryptionType {
+		case .none:
+			useEncryption = false
+			customCryptoKey = nil
+		case .withRandomKey:
+			useEncryption = true
+			customCryptoKey = nil
+		case .withCustomKey(let key):
+			useEncryption = true
+			customCryptoKey = key
+		}
 	}
 	#else
 	public init(name: String?, expiry: Expiry = .never,
-				maxSize: UInt = 0, directory: URL? = nil) {
+				maxSize: UInt = 0, directory: URL? = nil,
+				encryptionType: EncryptionType = .none) {
 		self.name = name ?? ("DiskStorage" + UUID().uuidString)
 		self.expiry = expiry
 		self.maxSize = maxSize
 		self.directory = directory
+		switch encryptionType {
+		case .none:
+			useEncryption = false
+			customCryptoKey = nil
+		case .withRandomKey:
+			useEncryption = true
+			customCryptoKey = nil
+		case .withCustomKey(let key):
+			useEncryption = true
+			customCryptoKey = key
+		}
 	}
 	#endif
+	
+	public enum EncryptionType {
+		case none, withRandomKey, withCustomKey(String)
+	}
 	
 }

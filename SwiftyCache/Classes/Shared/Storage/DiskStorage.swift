@@ -27,9 +27,9 @@ final public class DiskStorage<T> {
 	//public var keys: [String] { return infoAtPath.map { $0.value.key } }
 	//fileprivate lazy var infoAtPath: [String: DiskEntity] = self.getInfo()
 	fileprivate lazy var cacheEncoder = CacheJSONEncoder()
-	fileprivate lazy var cacheDecoder = CacheJSONDecoder()
 
 	private let transformer: Transformer<T>
+	fileprivate let serializer: DataSerializer
 	
 	fileprivate let resourceKeys: [URLResourceKey] = [
 		.isDirectoryKey,
@@ -65,6 +65,7 @@ final public class DiskStorage<T> {
 		self.path = path
 		self.transformer = transformer
 		self._expireWhenNoReferences = _expireWhenNoReferences
+		self.serializer = DataSerializer(encrypt: config.useEncryption, key: config.customCryptoKey, storageName: config.name)
 	}
 	
 	public convenience init(config: DiskConfig, fileManager: FileManager = FileManager.default, transformer: Transformer<T>) throws {
@@ -130,7 +131,7 @@ extension DiskStorage: StorageAware {
 					let data = try (NSKeyedUnarchiver.unarchiveObject(withFile: path) as? Data)~!
 					let expiryDate = try resourceValues.contentModificationDate~!
 					let fileSize = resourceValues.totalFileAllocatedSize ?? data.count
-					let entity = try DataSerializer.getInfo(from: data)
+					let entity = try serializer.getInfo(from: data)
 					result[path] = EntityInfo(expiry: Expiry.date(expiryDate), entity: entity, fileSize: fileSize)
 				} catch {}
 			}
@@ -144,7 +145,7 @@ extension DiskStorage: StorageAware {
 		guard let info = info[path] else {throw StorageError.notFound }
 		let data = try (NSKeyedUnarchiver.unarchiveObject(withFile: path) as? Data)~!
 		let attributes = try fileManager.attributesOfItem(atPath: path)
-		let (_, object) = try DataSerializer.deserialize(data: data, transformer: transformer)
+		let (_, object) = try serializer.deserialize(data: data, transformer: transformer)
 		guard let date = attributes[.modificationDate] as? Date else {
 			throw StorageError.malformedFileAttributes
 		}
@@ -179,9 +180,9 @@ extension DiskStorage: StorageAware {
 					try storage.removeFromMemory(forKey: key)
 				}
 			}
-			data = DataSerializer.serialize(data: _data, info: objectInfo.entity)
+			data = serializer.serialize(data: _data, info: objectInfo.entity)
 		} else {
-			data = try DataSerializer.serialize(object: object, info: objectInfo.entity, transformer: transformer)
+			data = try serializer.serialize(object: object, info: objectInfo.entity, transformer: transformer)
 		}
 		objectInfo.fileSize = data.count
 		try set(data, forKey: key, expiry: expiry)

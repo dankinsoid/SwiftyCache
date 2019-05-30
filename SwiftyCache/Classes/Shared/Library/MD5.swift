@@ -21,6 +21,10 @@ import Foundation
 
 // MARK: - Public
 
+public func MD5(_ input: [CUnsignedChar]) -> [CUnsignedChar] {
+	return rstr_md5(input)
+}
+
 public func MD5(_ input: String) -> String {
 	return hex_md5(input)
 }

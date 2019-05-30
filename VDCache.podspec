@@ -8,7 +8,7 @@
 
 Pod::Spec.new do |s|
   s.name             = 'VDCache'
-  s.version          = '0.7.11'
+  s.version          = '0.8.0'
   s.summary          = 'VDCache is a framework for caching data'
 
 # This description is used to generate tags and improve search results.
@@ -39,5 +39,6 @@ TODO: Add long description of the pod here.
   # s.public_header_files = 'Pod/Classes/**/*.h'
   s.frameworks = 'UIKit'
 	s.dependency 'RxSwift'
+	s.dependency 'CommonCrypto'
   # s.dependency 'AFNetworking', '~> 2.3'
 end

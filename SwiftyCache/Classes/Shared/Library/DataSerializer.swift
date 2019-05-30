@@ -1,42 +1,91 @@
 import Foundation
+import CryptoSwift
 
 /// Convert to and from data
-enum DataSerializer {
+struct DataSerializer {
 	
-	static func serialize<T>(object: T, info: DiskEntity, transformer: Transformer<T>) throws -> Data {
+	let encrypt: Bool
+	let cryptoKey: [CUnsignedChar]?
+	let iv: Array<UInt8>?
+	
+	init(encrypt: Bool, key: String?, storageName: String) {
+		self.encrypt = encrypt
+		if encrypt {
+			let ivKey = storageName + "EF"
+			let keyKey = storageName + "FRE"
+			let keychain = KeychainStorage<String>(name: "VDCacheDataSerializer")
+			let ivKeychain = KeychainStorage<Data>(name: "VDCacheDataSerializerIV")
+			if let string = key {
+				let cryptoKey = MD5(string)
+				try? keychain.setObject(cryptoKey, forKey: keyKey)
+				self.cryptoKey = Array(cryptoKey.utf8)
+			} else if let key = keychain.object(forKey: keyKey) {
+				self.cryptoKey = Array(key.utf8)
+			} else {
+				let key = MD5(String("1234567890qwertyuiopasdfghjklzxcvbnmQWERTYUIOPASDFGHJKLZXCVBNM_.<>)(*&^%$#@!".shuffled()))
+				try? keychain.setObject(key, forKey: keyKey)
+				cryptoKey = Array(key.utf8)
+			}
+			if let iv = ivKeychain.object(forKey: ivKey) {
+				self.iv = Array(iv)
+			} else {
+				let iv = AES.randomIV(AES.blockSize)
+				self.iv = iv
+				try? ivKeychain.setObject(Data(iv), forKey: ivKey)
+			}
+		} else {
+			self.iv = nil
+			self.cryptoKey = nil
+		}
+	}
+	
+	func serialize<T>(object: T, info: DiskEntity, transformer: Transformer<T>) throws -> Data {
 		let data = try transformer.toData(object)
 		return try serialize(data: data, info: info)
 	}
 	
-	static func serialize(data: Data, info: DiskEntity) -> Data {
+	func serialize(data: Data, info: DiskEntity) throws -> Data {
 		var encoder = ProtobufJSONEncoder()
 		info.encode(to: &encoder)
 		encoder.comma()
 		encoder.append(utf8Data: data)
-		return encoder.dataResult
+		return try encrypt(encoder.dataResult)
 	}
 	
-	static func deserialize<T>(data: Data, transformer: Transformer<T>) throws -> (DiskEntity, T) {
-		return try data.withUnsafeBytes { (bytes: UnsafeRawBufferPointer) -> (DiskEntity, T) in
+	func deserialize<T>(data: Data, transformer: Transformer<T>) throws -> (DiskEntity, T) {
+		let decrypted = try decrypt(data)
+		return try decrypted.withUnsafeBytes { (bytes: UnsafeRawBufferPointer) -> (DiskEntity, T) in
 			let source = bytes.bindMemory(to: UInt8.self)
 			var scanner = JSONScanner(source: source, messageDepthLimit: .max)
 			let info = try DiskEntity(scanner: &scanner)
 			try scanner.skipRequiredComma()
-			let value = try transformer.fromData(data.suffix(from: scanner.currentIndex))
+			let value = try transformer.fromData(decrypted.suffix(from: scanner.currentIndex))
 			return (info, value)
 		}
 	}
 	
-	static func getKey(from data: Data) throws -> String {
-		return try data.withUnsafeBytes { (bytes: UnsafeRawBufferPointer) -> String in
+	func getKey(from data: Data) throws -> String {
+		let decrypted = try decrypt(data)
+		return try decrypted.withUnsafeBytes { (bytes: UnsafeRawBufferPointer) -> String in
 			let source = bytes.bindMemory(to: UInt8.self)
 			var scanner = JSONScanner(source: source, messageDepthLimit: .max)
 			return try scanner.nextQuotedString()
 		}
 	}
 	
-	static func getInfo(from data: Data) throws -> DiskEntity {
-		return try DiskEntity(from: data)
+	func getInfo(from data: Data) throws -> DiskEntity {
+		let decrypted = try decrypt(data)
+		return try DiskEntity(from: decrypted)
+	}
+	
+	func decrypt(_ data: Data) throws -> Data {
+		guard encrypt, let key = cryptoKey, let iv = self.iv else { return data }
+		return try Data(AES(key: key, blockMode: CBC(iv: iv), padding: .pkcs7).decrypt(data))
+	}
+	
+	func encrypt(_ data: Data) throws -> Data {
+		guard encrypt, let key = cryptoKey, let iv = self.iv else { return data }
+		return try Data(AES(key: key, blockMode: CBC(iv: iv), padding: .pkcs7).encrypt(data))
 	}
 	
 }
