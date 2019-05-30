@@ -1,6 +1,6 @@
-# SwiftyCache
+# VDCache
 
-[![CI Status](https://img.shields.io/travis/Данил Войдилов/SwiftyCache.svg?style=flat)](https://travis-ci.org/Данил Войдилов/SwiftyCache)
+[![CI Status](https://img.shields.io/travis/Данил Войдилов/SwiftyCache.svg?style=flat)](https://travis-ci.org/Данил Войдилов/SwiftyCache)
 [![Version](https://img.shields.io/cocoapods/v/SwiftyCache.svg?style=flat)](https://cocoapods.org/pods/SwiftyCache)
 [![License](https://img.shields.io/cocoapods/l/SwiftyCache.svg?style=flat)](https://cocoapods.org/pods/SwiftyCache)
 [![Platform](https://img.shields.io/cocoapods/p/SwiftyCache.svg?style=flat)](https://cocoapods.org/pods/SwiftyCache)
@@ -17,13 +17,13 @@ SwiftyCache is available through [CocoaPods](https://cocoapods.org). To install
 it, simply add the following line to your Podfile:
 
 ```ruby
-pod 'SwiftyCache'
+pod 'VDCache'
 ```
 
 ## Author
 
-Данил Войдилов, voydilovda@pochtabank.ru
+Данил Войдилов, voydilovda@pochtabank.ru
 
 ## License
 
-SwiftyCache is available under the MIT license. See the LICENSE file for more info.
+VDCache is available under the MIT license. See the LICENSE file for more info.
