@@ -180,7 +180,7 @@ extension DiskStorage: StorageAware {
 					try storage.removeFromMemory(forKey: key)
 				}
 			}
-			data = serializer.serialize(data: _data, info: objectInfo.entity)
+			data = try serializer.serialize(data: _data, info: objectInfo.entity)
 		} else {
 			data = try serializer.serialize(object: object, info: objectInfo.entity, transformer: transformer)
 		}

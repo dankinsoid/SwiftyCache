@@ -32,7 +32,7 @@ extension UInt64: UnsignedBitPatternInitializable { typealias Signed = Int64 }
 
 extension Int {
 	
-	public var bitPattern: UInt64 {
+	var bitPattern: UInt64 {
 		return UInt64(self < 0 ? Magnitude.max - Magnitude(~self) : Magnitude(self))
 	}
 	
@@ -40,7 +40,7 @@ extension Int {
 
 extension Int32 {
 	
-	public var bitPattern: UInt32 {
+	var bitPattern: UInt32 {
 		return self < 0 ? Magnitude.max - Magnitude(~self) : Magnitude(self)
 	}
 	
