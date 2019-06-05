@@ -101,14 +101,11 @@ extension Storage: StorageObservationRegistry {
 	
 	@discardableResult
 	public func addStorageObserver<O: AnyObject>(_ observer: O, closure: @escaping (O, Storage, StorageChange) -> Void) -> ObservationToken {
-		return hybridStorage.addStorageObserver(observer) { [weak self] observer, _, change in
-			guard let strongSelf = self else { return }
-			closure(observer, strongSelf, change)
-		}
+		return syncStorage.addStorageObserver(observer, closure: closure, storage: self)
 	}
 	
 	public func removeAllStorageObservers() {
-		hybridStorage.removeAllStorageObservers()
+		syncStorage.removeAllStorageObservers()
 	}
 	
 	public func synchronize() throws {
@@ -120,18 +117,15 @@ extension Storage: KeyObservationRegistry {
 	
 	@discardableResult
 	public func addObserver<O: AnyObject>(_ observer: O, forKey key: String, closure: @escaping (O, Storage, KeyChange<T>) -> Void) -> ObservationToken {
-		return hybridStorage.addObserver(observer, forKey: key) { [weak self] observer, _, change in
-			guard let strongSelf = self else { return }
-			closure(observer, strongSelf, change)
-		}
+		return syncStorage.addObserver(observer, forKey: key, closure: closure, storage: self)
 	}
 	
 	public func removeObserver(forKey key: String) {
-		hybridStorage.removeObserver(forKey: key)
+		syncStorage.removeObserver(forKey: key)
 	}
 	
 	public func removeAllKeyObservers() {
-		hybridStorage.removeAllKeyObservers()
+		syncStorage.removeAllKeyObservers()
 	}
 	
 }

@@ -6,6 +6,7 @@ import Dispatch
 public class SyncStorage<T>: StorageAware {//where T == Storage.T {
 	public let innerStorage: HybridStorage<T>
 	private let serialQueue: DispatchQueue
+	private let observersQueue = DispatchQueue(label: "Cache.SyncStorage.ObserversSerialQueue." + UUID().uuidString)
 	private var isCurrentQueue = false
 	
 	public convenience init(_ storage: HybridStorage<T>) {
@@ -102,4 +103,37 @@ extension SyncStorage {
 		)
 		return storage
 	}
+	
+	@discardableResult
+	public func addStorageObserver<O: AnyObject>(_ observer: O, closure: @escaping (O, Storage<T>, StorageChange) -> Void, storage: Storage<T>) -> ObservationToken {
+		return innerStorage.addStorageObserver(observer) { [weak self, weak storage] observer, _, change in
+			guard let strongSelf = self, let storage = storage else { return }
+			strongSelf.observersQueue.async {
+				closure(observer, storage, change)
+			}
+		}
+	}
+	
+	public func removeAllStorageObservers() {
+		sync(innerStorage.removeAllStorageObservers)
+	}
+	
+	@discardableResult
+	public func addObserver<O: AnyObject>(_ observer: O, forKey key: String, closure: @escaping (O, Storage<T>, KeyChange<T>) -> Void, storage: Storage<T>) -> ObservationToken {
+		return innerStorage.addObserver(observer, forKey: key) { [weak self, weak storage] observer, _, change in
+			guard let strongSelf = self, let storage = storage else { return }
+			strongSelf.observersQueue.async {
+				closure(observer, storage, change)
+			}
+		}
+	}
+	
+	public func removeObserver(forKey key: String) {
+		sync(innerStorage.removeObserver, value: key)
+	}
+	
+	public func removeAllKeyObservers() {
+		sync(innerStorage.removeAllKeyObservers)
+	}
+	
 }
