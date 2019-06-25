@@ -12,10 +12,10 @@ private let asciiDoubleQuote = UInt8(ascii: "\"")
 
 public final class CacheJSONDecoder {
 	
-	var dateDecodingStrategy: DateDecodingStrategy
-	var keyDecodingStrategy: KeyDecodingStrategy
-	var tryDecodeFromQuotedString: Bool
-	var userInfo: [CodingUserInfoKey : Any] = [:]
+	public var dateDecodingStrategy: DateDecodingStrategy
+	public var keyDecodingStrategy: KeyDecodingStrategy
+	public var tryDecodeFromQuotedString: Bool
+	public var userInfo: [CodingUserInfoKey : Any] = [:]
 	
 	public init(dateDecodingStrategy: DateDecodingStrategy = .deferredToDate,
 				keyDecodingStrategy: KeyDecodingStrategy = .useDefaultKeys,

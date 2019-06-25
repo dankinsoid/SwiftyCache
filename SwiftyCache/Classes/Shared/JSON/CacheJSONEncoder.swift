@@ -523,6 +523,7 @@ fileprivate struct Boxer {
 		let encoder = _Encoder(codingPath: codingPath, boxer: self)
 		if let date = value as? Date {
 			try encodeDate(date, to: encoder)
+			return encoder.storage
 		}
 		if let info = cacheInfo,
 			let container = info.storagesContainer,
